@@ -12,7 +12,11 @@ $sql = 'SELECT id,label,code,active,last_used_at,updated_at
 if ($onlyActive) $sql .= ' WHERE active = 1';
 $sql .= ' ORDER BY id';
 
-$rows = pdo()->query($sql)->fetchAll();
+try {
+  $rows = pdo()->query($sql)->fetchAll();
+} catch (Throwable $e) {
+  respond(['ok'=>false,'error'=>$e->getMessage()], 500);
+}
 
 $codes = [];
 $ctx = hash_init('sha256');
