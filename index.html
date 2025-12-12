@@ -207,7 +207,7 @@
     };
 
     function loadSettings() {
-      apiBaseEl.value = localStorage.getItem('apiBase') || 'https://cudosheenetfi.online/eo/roll-in';
+      apiBaseEl.value = localStorage.getItem('apiBase') || '';
       apiKeyEl.value = localStorage.getItem('apiKey') || '';
       activeFilterEl.value = localStorage.getItem('onlyActive') || '1';
     }
@@ -266,13 +266,15 @@
 
     async function fetchCodes() {
       setError('');
-      const base = apiBaseEl.value.trim().replace(/\/+$/,'');
+      const baseRaw = apiBaseEl.value.trim().replace(/\/+$/,'');
       const key = apiKeyEl.value.trim();
-      if (!base) { setError('Configura API Base'); return; }
       const onlyActive = activeFilterEl.value;
-      const url = `${base}/codes.php?only_active=${onlyActive}`;
+      const url = baseRaw
+        ? `${baseRaw}/codes.php?only_active=${onlyActive}`
+        : `./data.php?only_active=${onlyActive}`;
       try {
-        const res = await fetch(url, { headers: { 'X-API-Key': key } });
+        const headers = key ? { 'X-API-Key': key } : {};
+        const res = await fetch(url, { headers });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || 'Respuesta inválida');
