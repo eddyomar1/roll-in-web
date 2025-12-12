@@ -207,9 +207,9 @@
     };
 
     function loadSettings() {
-      apiBaseEl.value = localStorage.getItem('apiBase') || '';
-      apiKeyEl.value = localStorage.getItem('apiKey') || '';
-      activeFilterEl.value = localStorage.getItem('onlyActive') || '1';
+      apiBaseEl.value = localStorage.getItem('apiBase') ?? '';
+      apiKeyEl.value = localStorage.getItem('apiKey') ?? '';
+      activeFilterEl.value = localStorage.getItem('onlyActive') ?? '0'; // por defecto muestra todos
     }
     function saveSettings() {
       localStorage.setItem('apiBase', apiBaseEl.value.trim());
