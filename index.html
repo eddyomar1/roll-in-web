@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel de Controles Rolling</title>
+  <style>
+    :root {
+      --bg: radial-gradient(circle at 20% 20%, #121826, #0b0f18 40%, #0a0c12 80%);
+      --card: rgba(255,255,255,0.06);
+      --text: #e8ecf3;
+      --muted: #9ba3b5;
+      --accent: #54d6ff;
+      --accent-2: #7cffb9;
+      --danger: #ff6b6b;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --radius: 16px;
+      font-family: "DM Sans", "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: -0.5px;
+    }
+    .muted { color: var(--muted); font-size: 14px; }
+    .panel {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    input, select, button {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #041019;
+      font-weight: 600;
+      transition: transform 0.1s ease, box-shadow 0.2s;
+      box-shadow: 0 8px 20px rgba(84,214,255,0.35);
+    }
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin: 12px 0 18px;
+    }
+    .stat {
+      background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+      border-radius: 14px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .stat .label { font-size: 12px; color: var(--muted); }
+    .stat .value { font-size: 22px; font-weight: 700; }
+    .stat .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      margin-top: 4px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      text-align: left;
+    }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; letter-spacing: 0.5px; }
+    tr:hover td { background: rgba(255,255,255,0.03); }
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #041019;
+      background: var(--accent);
+    }
+    .tag.off { background: rgba(255,255,255,0.15); color: var(--text); }
+    .error { color: var(--danger); margin-top: 8px; font-size: 13px; }
+    .timeline {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+    }
+    .event {
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .event strong { font-size: 14px; }
+    .event span { color: var(--muted); font-size: 12px; }
+    @media (max-width: 720px) {
+      body { padding: 16px; }
+      table { font-size: 13px; }
+      th, td { padding: 8px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Panel de Controles</h1>
+      <div class="muted">Visualiza controles, botones y su último uso</div>
+    </div>
+    <button id="refresh">Actualizar</button>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div>
+        <label for="apiBase">API Base</label>
+        <input id="apiBase" placeholder="https://cudosheenetfi.online/eo/roll-in" value="">
+      </div>
+      <div>
+        <label for="apiKey">API Key</label>
+        <input id="apiKey" placeholder="X-API-Key" value="" type="password">
+      </div>
+      <div>
+        <label for="activeFilter">Controles</label>
+        <select id="activeFilter">
+          <option value="1">Solo activos</option>
+          <option value="0">Todos</option>
+        </select>
+      </div>
+      <div style="align-self:end;">
+        <button id="saveSettings">Guardar ajustes</button>
+      </div>
+    </div>
+    <div id="error" class="error" hidden></div>
+    <div class="stats" id="stats"></div>
+    <div class="timeline" id="recent"></div>
+    <div style="overflow-x:auto; margin-top:12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Label</th>
+            <th>Hex</th>
+            <th>Estado</th>
+            <th>Último uso</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const apiBaseEl = document.getElementById('apiBase');
+    const apiKeyEl = document.getElementById('apiKey');
+    const activeFilterEl = document.getElementById('activeFilter');
+    const errEl = document.getElementById('error');
+    const tbody = document.getElementById('table-body');
+    const statsEl = document.getElementById('stats');
+    const recentEl = document.getElementById('recent');
+
+    const fmtDate = iso => {
+      if (!iso) return '—';
+      const d = new Date(iso.replace(' ', 'T'));
+      if (isNaN(d)) return iso;
+      return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
+    };
+
+    function loadSettings() {
+      apiBaseEl.value = localStorage.getItem('apiBase') || 'https://cudosheenetfi.online/eo/roll-in';
+      apiKeyEl.value = localStorage.getItem('apiKey') || '';
+      activeFilterEl.value = localStorage.getItem('onlyActive') || '1';
+    }
+    function saveSettings() {
+      localStorage.setItem('apiBase', apiBaseEl.value.trim());
+      localStorage.setItem('apiKey', apiKeyEl.value.trim());
+      localStorage.setItem('onlyActive', activeFilterEl.value);
+    }
+
+    function setError(msg) {
+      if (!msg) { errEl.hidden = true; errEl.textContent = ''; return; }
+      errEl.hidden = false;
+      errEl.textContent = msg;
+    }
+
+    function renderStats(codes) {
+      const total = codes.length;
+      const active = codes.filter(c => c.active).length;
+      const inactive = total - active;
+      const used = codes.filter(c => c.last_used_at).length;
+      statsEl.innerHTML = `
+        <div class="stat"><div class="label">Total</div><div class="value">${total}</div></div>
+        <div class="stat"><div class="label">Activos</div><div class="value">${active}</div><div class="pill">en servicio</div></div>
+        <div class="stat"><div class="label">Inactivos</div><div class="value">${inactive}</div></div>
+        <div class="stat"><div class="label">Con uso registrado</div><div class="value">${used}</div></div>
+      `;
+    }
+
+    function renderTable(codes) {
+      tbody.innerHTML = '';
+      codes.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${c.id}</td>
+          <td>${c.label || '—'}</td>
+          <td><code>${c.code}</code></td>
+          <td><span class="tag ${c.active ? '' : 'off'}">${c.active ? 'Activo' : 'Inactivo'}</span></td>
+          <td>${fmtDate(c.last_used_at)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderRecent(codes) {
+      const recent = codes
+        .filter(c => c.last_used_at)
+        .sort((a,b) => new Date(b.last_used_at) - new Date(a.last_used_at))
+        .slice(0, 5);
+      recentEl.innerHTML = recent.map(c => `
+        <div class="event">
+          <div><strong>${c.label || 'Control ' + c.id}</strong><br><span>${c.code}</span></div>
+          <span>${fmtDate(c.last_used_at)}</span>
+        </div>
+      `).join('');
+    }
+
+    async function fetchCodes() {
+      setError('');
+      const base = apiBaseEl.value.trim().replace(/\/+$/,'');
+      const key = apiKeyEl.value.trim();
+      if (!base) { setError('Configura API Base'); return; }
+      const onlyActive = activeFilterEl.value;
+      const url = `${base}/codes.php?only_active=${onlyActive}`;
+      try {
+        const res = await fetch(url, { headers: { 'X-API-Key': key } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Respuesta inválida');
+        renderStats(data.codes);
+        renderTable(data.codes);
+        renderRecent(data.codes);
+      } catch (e) {
+        setError(e.message);
+        console.error(e);
+      }
+    }
+
+    document.getElementById('refresh').addEventListener('click', fetchCodes);
+    document.getElementById('saveSettings').addEventListener('click', () => {
+      saveSettings();
+      fetchCodes();
+    });
+
+    loadSettings();
+    fetchCodes();
+  </script>
+</body>
+</html>
