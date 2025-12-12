@@ -269,12 +269,19 @@
       const baseRaw = apiBaseEl.value.trim().replace(/\/+$/,'');
       const key = apiKeyEl.value.trim();
       const onlyActive = activeFilterEl.value;
-      const url = baseRaw
+      const primaryUrl = baseRaw
         ? `${baseRaw}/codes.php?only_active=${onlyActive}`
         : `./data.php?only_active=${onlyActive}`;
+      const fallbackUrl = `./data.php?only_active=${onlyActive}`;
       try {
         const headers = key ? { 'X-API-Key': key } : {};
-        const res = await fetch(url, { headers });
+        let res = await fetch(primaryUrl, { headers });
+        if (!res.ok) {
+          if (primaryUrl !== fallbackUrl) {
+            // intenta proxy local
+            res = await fetch(fallbackUrl, { headers: {} });
+          }
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || 'Respuesta inválida');
