@@ -269,27 +269,34 @@
       const baseRaw = apiBaseEl.value.trim().replace(/\/+$/,'');
       const key = apiKeyEl.value.trim();
       const onlyActive = activeFilterEl.value;
-      const primaryUrl = baseRaw
-        ? `${baseRaw}/codes.php?only_active=${onlyActive}`
-        : `./data.php?only_active=${onlyActive}`;
-      const fallbackUrl = `./data.php?only_active=${onlyActive}`;
-      try {
-        const headers = key ? { 'X-API-Key': key } : {};
-        let res = await fetch(primaryUrl, { headers });
-        if (!res.ok) {
-          if (primaryUrl !== fallbackUrl) {
-            // intenta proxy local
-            res = await fetch(fallbackUrl, { headers: {} });
-          }
-        }
+      const localUrl = `./data.php?only_active=${onlyActive}`;
+      const remoteUrl = baseRaw ? `${baseRaw}/codes.php?only_active=${onlyActive}` : null;
+      const headers = key ? { 'X-API-Key': key } : {};
+
+      const tryFetch = async (url, hdrs) => {
+        const res = await fetch(url, { headers: hdrs });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || 'Respuesta inválida');
+        return data;
+      };
+
+      try {
+        let data = null;
+        if (remoteUrl) {
+          try { data = await tryFetch(remoteUrl, headers); }
+          catch (e) {
+            console.warn('Fallo fetch remoto, probando local', e);
+            data = await tryFetch(localUrl, {});
+          }
+        } else {
+          data = await tryFetch(localUrl, {});
+        }
         renderStats(data.codes);
         renderTable(data.codes);
         renderRecent(data.codes);
       } catch (e) {
-        setError(e.message);
+        setError(e.message || 'Falló la carga');
         console.error(e);
       }
     }
