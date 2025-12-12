@@ -3,7 +3,7 @@
 // Usa las mismas credenciales que la API y expone el mismo JSON que codes.php,
 // pero sin exigir X-API-Key (pensado para uso interno).
 
-require_once __DIR__ . '/../config-web.php';
+require_once __DIR__ . '/config-web.php';
 
 $onlyActive = !isset($_GET['only_active']) || $_GET['only_active'] !== '0';
 
