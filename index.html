@@ -251,15 +251,18 @@
       });
     }
 
-    function renderRecent(codes) {
-      const recent = codes
-        .filter(c => c.last_used_at)
-        .sort((a,b) => new Date(b.last_used_at) - new Date(a.last_used_at))
-        .slice(0, 5);
-      recentEl.innerHTML = recent.map(c => `
+    function renderRecentActivities(acts) {
+      if (!acts || acts.length === 0) {
+        recentEl.innerHTML = '<div class="muted">Sin actividad reciente</div>';
+        return;
+      }
+      recentEl.innerHTML = acts.slice(0,5).map(a => `
         <div class="event">
-          <div><strong>${c.label || 'Control ' + c.id}</strong><br><span>${c.code}</span></div>
-          <span>${fmtDate(c.last_used_at)}</span>
+          <div><strong>${a.label || ('Control ' + a.control_id)}</strong><br><span>${a.code}</span></div>
+          <div style="text-align:right;">
+            <span>${fmtDate(a.used_at)}</span><br>
+            <span class="muted">${a.door || '—'}</span>
+          </div>
         </div>
       `).join('');
     }
@@ -294,9 +297,40 @@
         }
         renderStats(data.codes);
         renderTable(data.codes);
-        renderRecent(data.codes);
+        await fetchActivities(); // actualiza actividades recientes
       } catch (e) {
         setError(e.message || 'Falló la carga');
+        console.error(e);
+      }
+    }
+
+    async function fetchActivities() {
+      const baseRaw = apiBaseEl.value.trim().replace(/\/+$/,'');
+      const key = apiKeyEl.value.trim();
+      const localUrl = './activity.php?limit=10';
+      const remoteUrl = baseRaw ? `${baseRaw}/activity.php?limit=10` : null;
+      const headers = key ? { 'X-API-Key': key } : {};
+      const tryFetch = async (url, hdrs) => {
+        const res = await fetch(url, { headers: hdrs });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Respuesta inválida');
+        return data;
+      };
+      try {
+        let data = null;
+        if (remoteUrl) {
+          try { data = await tryFetch(remoteUrl, headers); }
+          catch (e) {
+            console.warn('Fallo fetch remoto de activity, probando local', e);
+            data = await tryFetch(localUrl, {});
+          }
+        } else {
+          data = await tryFetch(localUrl, {});
+        }
+        renderRecentActivities(data.activities || []);
+      } catch (e) {
+        setError(e.message || 'Falló actividad');
         console.error(e);
       }
     }
